@@ -18,7 +18,7 @@
      14. Mimir chatbot
 ============================================= */
 
-const API = "http://localhost:3000/api";
+const API = "https://deenwork.onrender.com/api";
 
 /* =============================================
    1. THEME
