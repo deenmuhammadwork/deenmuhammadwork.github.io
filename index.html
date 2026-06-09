@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>God of War — Tournament Hub</title>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Rajdhani:wght@300;400;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+
+    <!-- Leaflet Map CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+    <!-- =============================================
+         NAVBAR
+    ============================================= -->
+    <nav id="navbar">
+        <div class="nav-inner">
+            <a class="nav-brand" href="#hero">
+                <span class="nav-brand-icon">⚔</span>
+                <span class="nav-brand-text">GOD OF WAR</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="#hero"           class="nav-link active" data-section="hero">Home</a></li>
+                <li><a href="#players-section" class="nav-link"        data-section="players-section">Warriors</a></li>
+                <li><a href="#tournament"      class="nav-link"        data-section="tournament">Tournament</a></li>
+                <li><a href="#leaderboard"     class="nav-link"        data-section="leaderboard">Leaderboard</a></li>
+                <li><a href="#contact"         class="nav-link"        data-section="contact">Contact</a></li>
+            </ul>
+            <div class="nav-auth-btns">
+                <a href="admin.html" class="nav-btn-admin" title="Admin Panel">⚙ Admin</a>
+                <button class="nav-btn-login"  onclick="openModal('loginModal')">Sign In</button>
+                <button class="nav-btn-signup" onclick="openModal('signupModal')">Sign Up</button>
+                <!-- Profile button — shown only when logged in -->
+                <div class="nav-profile-wrap" id="navProfile" style="display:none">
+                    <button class="nav-profile-btn" onclick="scrollToProfile()">
+                        <span id="navAvatarInitials">??</span>
+                        <span id="navUsername">Warrior</span>
+                    </button>
+                </div>
+            </div>
+            <button class="nav-hamburger" id="hamburger" onclick="toggleMobileMenu()">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+        <!-- Mobile menu -->
+        <div class="nav-mobile" id="mobileMenu">
+            <a href="#hero"            onclick="toggleMobileMenu()">Home</a>
+            <a href="#players-section" onclick="toggleMobileMenu()">Warriors</a>
+            <a href="#tournament"      onclick="toggleMobileMenu()">Tournament</a>
+            <a href="#leaderboard"     onclick="toggleMobileMenu()">Leaderboard</a>
+            <a href="#contact"         onclick="toggleMobileMenu()">Contact</a>
+            <a href="admin.html">⚙ Admin Panel</a>
+            <a href="#" onclick="openModal('loginModal');toggleMobileMenu()">Sign In</a>
+            <a href="#" onclick="openModal('signupModal');toggleMobileMenu()">Sign Up</a>
+        </div>
+    </nav>
+
+    <!-- =============================================
+         POPUP MODAL
+    ============================================= -->
+    <div class="modal" id="popup">
+        <div class="modal-content">
+            <h2>⚔ Enter the Realm</h2>
+            <p>Only the worthy may join the tournament of Midgard.</p>
+            <button onclick="closePopup()">Accept Destiny</button>
+        </div>
+    </div>
+
+    <!-- =============================================
+         HERO SECTION
+    ============================================= -->
+    <section class="hero" id="hero">
+        <div class="hero-overlay">
+            <div class="container flex-row">
+                <div class="hero-content">
+                    <h1>God of War</h1>
+                    <p class="tagline">Vengeance • Redemption</p>
+                </div>
+                <div class="hero-image">
+                    <img src="kratos-left.jpg" alt="Kratos">
+                </div>
+            </div>
+            <div class="buttons-container">
+                <button class="btn-primary"   onclick="scrollToSection('tournament')">Join Tournament</button>
+                <button class="btn-secondary" onclick="scrollToSection('players-section')">View Warriors</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- =============================================
+         MAP SECTION
+    ============================================= -->
+    <section class="map-section reveal">
+        <h2 style="font-family:'Cinzel'; color:crimson; text-align:center; margin-bottom:20px;">The Nine Realms</h2>
+        <div id="map"></div>
+    </section>
+
+    <!-- =============================================
+         PLAYER CARDS SECTION
+    ============================================= -->
+    <section id="players-section" class="reveal">
+        <div class="section-head">
+            <h2>WARRIOR REGISTRY</h2>
+            <p>Select your champion · Filter the ranks</p>
+        </div>
+        <div class="controls-bar">
+            <div class="search-wrapper">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="searchInput" placeholder="Search warrior..." autocomplete="off">
+            </div>
+            <div class="filter-group">
+                <label>Game</label>
+                <button class="pill active" data-filter="game" data-value="all">All</button>
+                <button class="pill"        data-filter="game" data-value="GoW">GoW</button>
+                <button class="pill"        data-filter="game" data-value="Ragnarok">Ragnarök</button>
+                <button class="pill"        data-filter="game" data-value="Ascension">Ascension</button>
+            </div>
+            <div class="filter-group">
+                <label>Rank</label>
+                <button class="pill active" data-filter="rank" data-value="all">All</button>
+                <button class="pill"        data-filter="rank" data-value="Top">👑 Top</button>
+                <button class="pill"        data-filter="rank" data-value="Mid">⚡ Mid</button>
+                <button class="pill"        data-filter="rank" data-value="Low">🛡 Low</button>
+            </div>
+        </div>
+        <div class="results-meta" id="resultsCount"></div>
+        <div id="cards-grid">
+            <div class="shimmer-card"></div>
+            <div class="shimmer-card"></div>
+            <div class="shimmer-card"></div>
+            <div class="shimmer-card"></div>
+            <div class="shimmer-card"></div>
+            <div class="shimmer-card"></div>
+        </div>
+        <div id="no-results">
+            <span class="no-results-icon">⚔️</span>
+            <div class="no-results-title">NO WARRIORS FOUND</div>
+            <div class="no-results-sub">Even Kratos can't find what you seek...</div>
+        </div>
+    </section>
+
+    <!-- =============================================
+         TOURNAMENT REGISTRATION SECTION
+    ============================================= -->
+    <section id="tournament" class="map-section reveal">
+        <h2 style="font-family:'Cinzel'; color:crimson; text-align:center; margin-bottom:8px;">Tournament Registry</h2>
+        <p style="text-align:center; color:#555; margin-bottom:40px; letter-spacing:4px; text-transform:uppercase; font-size:12px;">Register Your Warrior · Pay & Compete</p>
+
+        <div class="tournament-form-wrap">
+            <!-- Left: Form -->
+            <div class="t-form-panel">
+                <div class="t-form-row">
+                    <div class="t-field">
+                        <label>Warrior Name *</label>
+                        <input type="text" id="tWarriorName" placeholder="Your in-game name" autocomplete="off">
+                        <span class="field-error" id="err-warrior"></span>
+                    </div>
+                    <div class="t-field">
+                        <label>Real Name</label>
+                        <input type="text" id="tRealName" placeholder="Optional">
+                    </div>
+                </div>
+                <div class="t-form-row">
+                    <div class="t-field">
+                        <label>Email *</label>
+                        <input type="email" id="tEmail" placeholder="your@email.com">
+                        <span class="field-error" id="err-email"></span>
+                    </div>
+                    <div class="t-field">
+                        <label>Rank</label>
+                        <select id="tRank">
+                            <option value="Mid">⚡ Mid</option>
+                            <option value="Top">👑 Top</option>
+                            <option value="Low">🛡 Low</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="t-form-row">
+                    <div class="t-field">
+                        <label>Tournament *</label>
+                        <select id="tTournament">
+                            <option value="">— Select Tournament —</option>
+                            <option value="Midgard Championship">⚔ Midgard Championship ($10)</option>
+                            <option value="Ragnarök Open">🌊 Ragnarök Open ($15)</option>
+                            <option value="Nine Realms Grand Prix">🌐 Nine Realms Grand Prix ($20)</option>
+                            <option value="Ascension Cup">🗡 Ascension Cup ($8)</option>
+                            <option value="Asgard Invitational">⚡ Asgard Invitational ($12)</option>
+                        </select>
+                        <span class="field-error" id="err-tournament"></span>
+                    </div>
+                    <div class="t-field">
+                        <label>Game *</label>
+                        <select id="tGame">
+                            <option value="GoW">God of War</option>
+                            <option value="Ragnarok">Ragnarök</option>
+                            <option value="Ascension">Ascension</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Payment Methods -->
+                <div class="t-payment-section">
+                    <label class="t-payment-label">Payment Method *</label>
+                    <div class="payment-grid" id="paymentGrid">
+                        <button class="pay-btn active" data-method="JazzCash">JazzCash</button>
+                        <button class="pay-btn" data-method="EasyPaisa">EasyPaisa</button>
+                        <button class="pay-btn" data-method="Stripe">Stripe</button>
+                        <button class="pay-btn" data-method="PayPal">PayPal</button>
+                        <button class="pay-btn" data-method="USDT">USDT</button>
+                        <button class="pay-btn" data-method="Bitcoin">Bitcoin</button>
+                        <button class="pay-btn" data-method="Ethereum">Ethereum</button>
+                    </div>
+                    <span class="field-error" id="err-payment"></span>
+                </div>
+
+                <button class="t-submit-btn" id="tSubmitBtn" onclick="registerWarrior()">
+                    <span id="tSubmitText">⚔ Enter Battle — Pay Now</span>
+                    <span id="tSubmitSpinner" style="display:none">⏳ Processing...</span>
+                </button>
+
+                <div class="t-success-msg" id="tSuccessMsg"></div>
+            </div>
+
+            <!-- Right: Active Tournaments -->
+            <div class="t-tournaments-panel">
+                <h3>Active Tournaments</h3>
+                <div id="tournamentList">
+                    <div class="shimmer-card" style="height:80px;margin-bottom:12px"></div>
+                    <div class="shimmer-card" style="height:80px;margin-bottom:12px"></div>
+                    <div class="shimmer-card" style="height:80px"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- =============================================
+         LEADERBOARD SECTION
+    ============================================= -->
+    <section id="leaderboard" class="leaderboard-section reveal">
+        <div class="section-head">
+            <h2>LEADERBOARD</h2>
+            <p>Champions of Midgard · Ranked by glory</p>
+        </div>
+
+        <div class="lb-controls">
+            <button class="lb-tab active" data-sort="wins"  onclick="switchLeaderboard('wins',  this)">⚔ Wins</button>
+            <button class="lb-tab"        data-sort="kd"    onclick="switchLeaderboard('kd',    this)">💀 K/D Ratio</button>
+            <button class="lb-tab"        data-sort="hours" onclick="switchLeaderboard('hours', this)">⏳ Hours</button>
+        </div>
+
+        <!-- Top 3 Podium -->
+        <div class="lb-podium" id="lbPodium"></div>
+
+        <!-- Full Table -->
+        <div class="lb-table-wrap">
+            <table class="lb-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Warrior</th>
+                        <th>Game</th>
+                        <th>Rank</th>
+                        <th id="lbMetricHeader">Wins</th>
+                        <th>K/D</th>
+                        <th>Hours</th>
+                    </tr>
+                </thead>
+                <tbody id="lbTableBody"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- =============================================
+         CONTACT SECTION
+    ============================================= -->
+    <section id="contact" class="contact-section reveal">
+        <div class="section-head">
+            <h2>CONTACT THE REALM</h2>
+            <p>Send word to the council · We answer all ravens</p>
+        </div>
+
+        <div class="contact-wrap">
+            <!-- Left: Contact Form -->
+            <div class="contact-form-panel">
+                <div class="c-field">
+                    <label>Your Name *</label>
+                    <input type="text" id="cName" placeholder="Warrior name or real name">
+                    <span class="field-error" id="cerr-name"></span>
+                </div>
+                <div class="c-field">
+                    <label>Email *</label>
+                    <input type="email" id="cEmail" placeholder="your@email.com">
+                    <span class="field-error" id="cerr-email"></span>
+                </div>
+                <div class="c-field">
+                    <label>Subject *</label>
+                    <select id="cSubject">
+                        <option value="">— Select Subject —</option>
+                        <option value="Tournament Inquiry">Tournament Inquiry</option>
+                        <option value="Technical Support">Technical Support</option>
+                        <option value="Report a Bug">Report a Bug</option>
+                        <option value="Partnership">Partnership</option>
+                        <option value="General">General</option>
+                    </select>
+                    <span class="field-error" id="cerr-subject"></span>
+                </div>
+                <div class="c-field">
+                    <label>Message *</label>
+                    <textarea id="cMessage" rows="5" placeholder="Speak your mind, warrior..."></textarea>
+                    <span class="field-error" id="cerr-msg"></span>
+                </div>
+                <button class="t-submit-btn" onclick="submitContact()">
+                    <span id="cSubmitText">📨 Send Raven</span>
+                </button>
+                <div class="t-success-msg" id="cSuccessMsg"></div>
+            </div>
+
+            <!-- Right: Map + Info -->
+            <div class="contact-info-panel">
+                <div class="contact-info-cards">
+                    <div class="contact-info-card">
+                        <span class="ci-icon">⚔</span>
+                        <div>
+                            <div class="ci-label">Tournament HQ</div>
+                            <div class="ci-value">Midgard, Nine Realms</div>
+                        </div>
+                    </div>
+                    <div class="contact-info-card">
+                        <span class="ci-icon">📧</span>
+                        <div>
+                            <div class="ci-label">Email</div>
+                            <div class="ci-value">council@midgard-tournament.com</div>
+                        </div>
+                    </div>
+                    <div class="contact-info-card">
+                        <span class="ci-icon">⏰</span>
+                        <div>
+                            <div class="ci-label">Response Time</div>
+                            <div class="ci-value">Within 24 Ravens</div>
+                        </div>
+                    </div>
+                </div>
+                <div id="contactMap"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- =============================================
+         PROFILE SECTION (shown when logged in)
+    ============================================= -->
+    <section id="profile" class="profile-section" style="display:none">
+        <div class="section-head">
+            <h2>WARRIOR PROFILE</h2>
+            <p>Your legacy in the Nine Realms</p>
+        </div>
+        <div class="profile-wrap">
+            <div class="profile-card">
+                <div class="profile-avatar" id="profileAvatar">??</div>
+                <div class="profile-name"   id="profileName">—</div>
+                <div class="profile-email"  id="profileEmail">—</div>
+                <div class="profile-badge"  id="profileBadge">Warrior</div>
+                <div class="profile-meta">
+                    <div class="profile-meta-item">
+                        <div class="pm-val" id="profileRegCount">0</div>
+                        <div class="pm-lbl">Tournaments</div>
+                    </div>
+                    <div class="profile-meta-item">
+                        <div class="pm-val" id="profileJoined">—</div>
+                        <div class="pm-lbl">Joined</div>
+                    </div>
+                </div>
+            </div>
+            <div class="profile-registrations">
+                <h3>Your Registrations</h3>
+                <div id="profileRegList"><p style="color:#666;font-size:14px">No tournaments registered yet.</p></div>
+                <div class="profile-theme-wrap">
+                    <h4>Personalized Theme</h4>
+                    <div class="theme-swatches">
+                        <button class="swatch swatch-crimson active" onclick="applyProfileTheme('crimson')" title="Crimson"></button>
+                        <button class="swatch swatch-gold"           onclick="applyProfileTheme('gold')"    title="Gold"></button>
+                        <button class="swatch swatch-blue"           onclick="applyProfileTheme('blue')"    title="Neon Blue"></button>
+                        <button class="swatch swatch-green"          onclick="applyProfileTheme('green')"   title="Forest"></button>
+                    </div>
+                </div>
+                <button class="t-submit-btn" style="max-width:200px;padding:10px 20px;font-size:13px;margin-top:20px" onclick="logoutUser()">Sign Out</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- =============================================
+         FOOTER
+    ============================================= -->
+    <footer id="footer">
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <span class="footer-brand-icon">⚔</span>
+                <span class="footer-brand-name">GOD OF WAR</span>
+                <p class="footer-tagline">Tournament Hub — Nine Realms Edition</p>
+            </div>
+            <div class="footer-links">
+                <div class="footer-col">
+                    <h4>Navigate</h4>
+                    <a href="#hero">Home</a>
+                    <a href="#players-section">Warriors</a>
+                    <a href="#tournament">Tournament</a>
+                    <a href="#leaderboard">Leaderboard</a>
+                    <a href="#contact">Contact</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Account</h4>
+                    <a href="#" onclick="openModal('signupModal')">Sign Up</a>
+                    <a href="#" onclick="openModal('loginModal')">Sign In</a>
+                    <a href="#" onclick="scrollToProfile()">Profile</a>
+                    <a href="admin.html">Admin Panel</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Tournaments</h4>
+                    <a href="#tournament">Midgard Championship</a>
+                    <a href="#tournament">Ragnarök Open</a>
+                    <a href="#tournament">Nine Realms Grand Prix</a>
+                    <a href="#tournament">Ascension Cup</a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <span>© 2026 God of War Tournament Hub — Air University, Islamabad · Web Application &amp; Services</span>
+        </div>
+    </footer>
+
+    <!-- =============================================
+         THEME TOGGLE
+    ============================================= -->
+    <div id="theme-toggle-wrap">
+        <button id="themeToggleBtn" onclick="toggleTheme()" title="Toggle Dark / Light Mode" aria-label="Toggle theme">
+            <span class="theme-icon" id="themeIcon">☀️</span>
+            <span class="theme-label" id="themeLabel">Light</span>
+        </button>
+    </div>
+
+    <!-- =============================================
+         MIMIR CHATBOT
+    ============================================= -->
+    <div id="mimir-container">
+        <button class="mimir-btn" onclick="toggleChat()">💬</button>
+        <div class="chat-window" id="chatWin">
+            <div class="chat-header">
+                <span>Mimir's Wisdom</span>
+                <button onclick="toggleChat()" style="background:none; border:none; color:white; cursor:pointer; font-size:16px;">✖</button>
+            </div>
+            <div class="chat-body" id="chatLogs">
+                <div class="msg bot">What knowledge do you seek, brother?</div>
+            </div>
+            <div class="chat-footer">
+                <input type="text" id="chatInp" placeholder="Ask about the realms...">
+                <button onclick="sendMsg()" style="background:crimson; border:none; color:white; padding:0 15px; cursor:pointer; font-size:18px;">⚔</button>
+            </div>
+            <button onclick="clearChat()" style="font-size:10px; color:#444; background:none; border:none; cursor:pointer; padding:5px; width:100%;">End Conversation</button>
+        </div>
+    </div>
+
+    <!-- =============================================
+         SIGN UP MODAL
+    ============================================= -->
+    <div class="auth-modal-overlay" id="signupModal">
+        <div class="auth-modal-box">
+            <button class="auth-modal-close" onclick="closeModal('signupModal')">✖</button>
+            <div class="auth-modal-header">
+                <span class="auth-modal-icon">⚔</span>
+                <h2>Join the Realm</h2>
+                <p>Create your warrior account</p>
+            </div>
+            <div class="auth-field">
+                <label>Warrior Name *</label>
+                <input type="text" id="su-warrior" placeholder="Your in-game name">
+                <span class="field-error" id="su-err-warrior"></span>
+            </div>
+            <div class="auth-field">
+                <label>Email *</label>
+                <input type="email" id="su-email" placeholder="your@email.com">
+                <span class="field-error" id="su-err-email"></span>
+            </div>
+            <div class="auth-field">
+                <label>Password *</label>
+                <div class="auth-pass-wrap">
+                    <input type="password" id="su-password" placeholder="Min 6 characters">
+                    <button class="pass-toggle" onclick="togglePassword('su-password', this)">👁</button>
+                </div>
+                <span class="field-error" id="su-err-pass"></span>
+            </div>
+            <div class="auth-field">
+                <label>Confirm Password *</label>
+                <div class="auth-pass-wrap">
+                    <input type="password" id="su-confirm" placeholder="Repeat password">
+                    <button class="pass-toggle" onclick="togglePassword('su-confirm', this)">👁</button>
+                </div>
+                <span class="field-error" id="su-err-confirm"></span>
+            </div>
+            <button class="auth-submit-btn" onclick="signupUser()">Create Account</button>
+            <p class="auth-switch">Already a warrior? <a href="#" onclick="switchModal('signupModal','loginModal')">Sign In</a></p>
+            <div class="auth-success" id="su-success" style="display:none"></div>
+        </div>
+    </div>
+
+    <!-- =============================================
+         SIGN IN MODAL
+    ============================================= -->
+    <div class="auth-modal-overlay" id="loginModal">
+        <div class="auth-modal-box">
+            <button class="auth-modal-close" onclick="closeModal('loginModal')">✖</button>
+            <div class="auth-modal-header">
+                <span class="auth-modal-icon">🗡</span>
+                <h2>Enter the Realm</h2>
+                <p>Sign in to your warrior account</p>
+            </div>
+            <div class="auth-field">
+                <label>Email *</label>
+                <input type="email" id="li-email" placeholder="your@email.com">
+                <span class="field-error" id="li-err-email"></span>
+            </div>
+            <div class="auth-field">
+                <label>Password *</label>
+                <div class="auth-pass-wrap">
+                    <input type="password" id="li-password" placeholder="Your password">
+                    <button class="pass-toggle" onclick="togglePassword('li-password', this)">👁</button>
+                </div>
+                <span class="field-error" id="li-err-pass"></span>
+            </div>
+            <button class="auth-submit-btn" onclick="loginUser()">Sign In</button>
+            <p class="auth-switch">New warrior? <a href="#" onclick="switchModal('loginModal','signupModal')">Sign Up</a></p>
+            <div class="auth-success" id="li-success" style="display:none"></div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Main Script -->
+    <script src="script.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚔ GoW Admin Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --red:    #dc143c;
+  --dark:   #0a0a0a;
+  --deeper: #020204;
+  --card:   #111;
+  --border: #2a0a0a;
+  --border2:#222;
+  --text:   #e0e0e0;
+  --muted:  #666;
+  --green:  #28a745;
+  --yellow: #ffc107;
+  --blue:   #007bff;
+}
+
+body {
+  background: var(--deeper);
+  color: var(--text);
+  font-family: 'Rajdhani', sans-serif;
+  min-height: 100vh;
+}
+
+/* ═══════════════════════════════════════════
+   LOGIN GATE — covers everything on load
+═══════════════════════════════════════════ */
+#loginGate {
+  position: fixed;
+  inset: 0;
+  background: var(--deeper);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.gate-box {
+  width: 400px;
+  max-width: 94vw;
+  background: var(--dark);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--red);
+  padding: 48px 40px;
+  animation: slideDown .5s ease;
+}
+@keyframes slideDown { from { transform: translateY(-30px); opacity:0; } to { transform: translateY(0); opacity:1; } }
+.gate-icon   { font-size: 40px; display: block; text-align: center; margin-bottom: 10px; }
+.gate-title  { font-family: 'Cinzel', serif; font-size: 20px; color: var(--red); text-align: center; letter-spacing: 4px; margin-bottom: 6px; }
+.gate-sub    { font-size: 11px; color: var(--muted); text-align: center; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 32px; }
+.gate-field  { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; }
+.gate-field label { font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); }
+.gate-field input {
+  padding: 12px 14px;
+  background: #0d0d0d;
+  border: 1px solid var(--border2);
+  color: var(--text);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 15px;
+  outline: none;
+  border-radius: 2px;
+  transition: border-color .2s;
+}
+.gate-field input:focus { border-color: var(--red); }
+.gate-pass-wrap { position: relative; display: flex; }
+.gate-pass-wrap input { width: 100%; }
+.gate-eye {
+  position: absolute; right: 12px; top: 50%;
+  transform: translateY(-50%);
+  background: none; border: none;
+  color: var(--muted); font-size: 16px; cursor: pointer;
+  transition: color .2s;
+}
+.gate-eye:hover { color: var(--text); }
+.gate-error {
+  font-size: 12px; color: #ff6b6b;
+  letter-spacing: 0.5px; font-weight: 600;
+  min-height: 16px; margin-top: -10px;
+  margin-bottom: 4px;
+}
+.gate-attempts { font-size: 11px; color: var(--yellow); text-align: center; margin-bottom: 12px; min-height: 16px; }
+.gate-btn {
+  width: 100%;
+  padding: 14px;
+  background: var(--red);
+  border: none;
+  color: white;
+  font-family: 'Cinzel', serif;
+  font-size: 14px;
+  letter-spacing: 3px;
+  cursor: pointer;
+  clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+  transition: all .2s;
+  margin-top: 8px;
+}
+.gate-btn:hover { background: #ff1f1f; box-shadow: 0 0 24px rgba(220,20,60,.5); }
+.gate-btn:disabled { opacity: .45; cursor: not-allowed; }
+.gate-hint  { margin-top: 20px; text-align: center; font-size: 11px; color: #333; letter-spacing: 1px; }
+.gate-hint span { color: #444; }
+.gate-lockout { text-align: center; padding: 20px 0; }
+.gate-lockout .lock-icon { font-size: 48px; display: block; margin-bottom: 12px; }
+.gate-lockout h3 { font-family: 'Cinzel', serif; color: var(--red); letter-spacing: 3px; margin-bottom: 8px; }
+.gate-lockout p  { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+#lockTimer { font-size: 24px; font-family: 'Cinzel', serif; color: var(--yellow); }
+.shake { animation: shake .4s ease; }
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  20%     { transform: translateX(-10px); }
+  40%     { transform: translateX(10px); }
+  60%     { transform: translateX(-6px); }
+  80%     { transform: translateX(6px); }
+}
+
+/* ═══════════════════════════════════════════
+   TOP BAR
+═══════════════════════════════════════════ */
+header {
+  background: #0d0d0d;
+  border-bottom: 2px solid var(--red);
+  padding: 0 32px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+}
+header h1 { font-family: 'Cinzel', serif; font-size: 1.4rem; color: var(--red); letter-spacing: 3px; }
+.header-right { display: flex; align-items: center; gap: 20px; }
+.admin-badge {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 11px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase;
+}
+.admin-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:.4;} }
+.header-logout {
+  padding: 7px 16px;
+  background: transparent;
+  border: 1px solid rgba(220,20,60,.4);
+  color: var(--text);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 12px; font-weight: 700;
+  letter-spacing: 2px; text-transform: uppercase;
+  cursor: pointer; border-radius: 2px;
+  transition: all .2s;
+}
+.header-logout:hover { border-color: var(--red); color: var(--red); }
+.back-link {
+  font-size: 12px; color: var(--muted); letter-spacing: 1px;
+  text-decoration: none; transition: color .2s;
+  display: flex; align-items: center; gap: 6px;
+}
+.back-link:hover { color: var(--text); }
+
+/* ═══════════════════════════════════════════
+   LAYOUT
+═══════════════════════════════════════════ */
+.layout { display: grid; grid-template-columns: 220px 1fr; min-height: calc(100vh - 64px); }
+
+/* ═══════════════════════════════════════════
+   SIDEBAR
+═══════════════════════════════════════════ */
+nav {
+  background: #0d0d0d;
+  border-right: 1px solid var(--border);
+  padding: 24px 0;
+  position: sticky; top: 64px;
+  height: calc(100vh - 64px);
+  overflow-y: auto;
+}
+nav a {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 24px;
+  color: var(--muted);
+  text-decoration: none;
+  font-weight: 600;
+  letter-spacing: 1px;
+  font-size: 0.88rem;
+  border-left: 3px solid transparent;
+  transition: all .2s;
+}
+nav a:hover, nav a.active {
+  color: var(--red);
+  border-left-color: var(--red);
+  background: #1a0505;
+}
+.nav-label {
+  color: #333;
+  font-size: 0.68rem;
+  padding: 16px 24px 6px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+.nav-divider { height: 1px; background: var(--border); margin: 8px 16px; }
+
+/* ═══════════════════════════════════════════
+   MAIN CONTENT
+═══════════════════════════════════════════ */
+main { padding: 32px; overflow-y: auto; }
+
+.section { display: none; }
+.section.active { display: block; }
+
+.section-title {
+  font-family: 'Cinzel', serif;
+  color: var(--red); font-size: 1.4rem; letter-spacing: 3px;
+  margin-bottom: 6px;
+}
+.section-sub {
+  color: var(--muted); font-size: .82rem;
+  letter-spacing: 2px; text-transform: uppercase;
+  margin-bottom: 28px;
+}
+
+/* ═══════════════════════════════════════════
+   STAT CARDS
+═══════════════════════════════════════════ */
+.stats-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-bottom: 32px; }
+@media(max-width:900px){ .stats-row{ grid-template-columns:repeat(2,1fr); } }
+.stat-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--red);
+  padding: 20px;
+  border-radius: 3px;
+  transition: transform .2s;
+}
+.stat-card:hover { transform: translateY(-3px); }
+.stat-card .val { font-size: 2rem; font-family: 'Cinzel', serif; color: var(--red); }
+.stat-card .lbl { color: var(--muted); font-size: .75rem; letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
+
+/* ═══════════════════════════════════════════
+   TABLE
+═══════════════════════════════════════════ */
+.table-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 3px; overflow: hidden; margin-bottom: 24px; }
+.table-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; border-bottom: 1px solid var(--border);
+}
+.table-head h3 { font-family: 'Cinzel', serif; color: var(--red); font-size: .95rem; letter-spacing: 2px; }
+table { width: 100%; border-collapse: collapse; }
+th {
+  background: #0d0d0d; padding: 11px 16px;
+  text-align: left; font-size: .72rem; letter-spacing: 2px;
+  color: var(--muted); text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+}
+td { padding: 11px 16px; border-bottom: 1px solid #1a1a1a; font-size: .88rem; vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #161616; }
+
+/* ═══════════════════════════════════════════
+   BADGES
+═══════════════════════════════════════════ */
+.badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: .72rem; font-weight: 700; letter-spacing: 1px; }
+.badge-paid    { background: #0d2e18; color: #28c76f; border: 1px solid #28c76f44; }
+.badge-pending { background: #2e2000; color: var(--yellow); border: 1px solid #ffc10744; }
+.badge-failed  { background: #2e0000; color: var(--red);    border: 1px solid var(--red); }
+.badge-top     { background: #1a0a00; color: #ffd700; border: 1px solid #ffd70033; }
+.badge-mid     { background: #00102e; color: #7ab3ff; border: 1px solid #7ab3ff33; }
+.badge-low     { background: #0d2e1a; color: #5ddf8a; border: 1px solid #5ddf8a33; }
+
+/* ═══════════════════════════════════════════
+   BUTTONS
+═══════════════════════════════════════════ */
+.btn {
+  padding: 8px 18px; border: none; cursor: pointer;
+  font-family: 'Rajdhani', sans-serif; font-weight: 700;
+  font-size: .85rem; letter-spacing: 1px; border-radius: 2px;
+  transition: opacity .2s, transform .15s;
+}
+.btn:hover { opacity: .85; transform: translateY(-1px); }
+.btn-red    { background: var(--red);   color: white; }
+.btn-green  { background: var(--green); color: white; }
+.btn-yellow { background: var(--yellow);color: #111;  }
+.btn-blue   { background: var(--blue);  color: white; }
+.btn-ghost  { background: transparent; color: var(--red); border: 1px solid var(--red); }
+.btn-sm { padding: 5px 11px; font-size: .78rem; }
+
+/* ═══════════════════════════════════════════
+   FORM
+═══════════════════════════════════════════ */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group label { font-size: .72rem; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; font-weight: 700; }
+.form-group input, .form-group select {
+  background: #0d0d0d; border: 1px solid var(--border2);
+  color: var(--text); padding: 10px 14px;
+  font-family: 'Rajdhani', sans-serif; font-size: .92rem;
+  border-radius: 2px; outline: none; transition: border-color .2s;
+}
+.form-group input:focus, .form-group select:focus { border-color: var(--red); }
+.form-group select option { background: #111; }
+.form-full { grid-column: 1 / -1; }
+.form-error { font-size: .75rem; color: #ff6b6b; font-weight: 600; min-height: 14px; }
+
+/* ═══════════════════════════════════════════
+   MODAL (CRUD)
+═══════════════════════════════════════════ */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.85);
+  z-index: 9999; align-items: center; justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal-box {
+  background: #111; border: 1px solid var(--border);
+  border-top: 3px solid var(--red);
+  padding: 32px; width: 620px; max-width: 95vw;
+  border-radius: 3px; max-height: 92vh; overflow-y: auto;
+  animation: slideDown .3s ease;
+}
+.modal-box h3 { font-family: 'Cinzel', serif; color: var(--red); margin-bottom: 24px; letter-spacing: 2px; }
+.modal-footer { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; }
+
+/* ═══════════════════════════════════════════
+   CONFIRM MODAL
+═══════════════════════════════════════════ */
+#confirmModal .modal-box { width: 420px; text-align: center; }
+.confirm-icon { font-size: 40px; margin-bottom: 12px; display: block; }
+#confirmModal h3 { font-size: 1.1rem; margin-bottom: 8px; }
+#confirmModal p  { color: var(--muted); font-size: .9rem; margin-bottom: 24px; }
+
+/* ═══════════════════════════════════════════
+   PAYMENT METHODS GRID
+═══════════════════════════════════════════ */
+.payment-methods { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+.pay-opt {
+  padding: 8px 14px; border: 1px solid var(--border2);
+  background: #0d0d0d; color: var(--muted);
+  cursor: pointer; font-family: 'Rajdhani', sans-serif;
+  font-weight: 600; border-radius: 2px; font-size: .82rem;
+  transition: all .2s;
+}
+.pay-opt:hover, .pay-opt.selected { border-color: var(--red); background: #1a0505; color: var(--red); }
+
+/* ═══════════════════════════════════════════
+   SEARCH / FILTER BAR
+═══════════════════════════════════════════ */
+.search-bar { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+.search-bar input {
+  flex: 1; min-width: 200px;
+  background: var(--card); border: 1px solid var(--border);
+  color: var(--text); padding: 10px 16px;
+  font-family: 'Rajdhani', sans-serif; font-size: .92rem;
+  border-radius: 2px; outline: none;
+}
+.search-bar input:focus { border-color: var(--red); }
+.filter-select {
+  padding: 10px 14px; background: var(--card); border: 1px solid var(--border);
+  color: var(--muted); font-family: 'Rajdhani', sans-serif; font-size: .85rem;
+  border-radius: 2px; outline: none; cursor: pointer;
+}
+.filter-select:focus { border-color: var(--red); }
+
+/* ═══════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════ */
+#toast {
+  position: fixed; bottom: 24px; right: 24px;
+  background: var(--green); color: white;
+  padding: 12px 24px; border-radius: 3px;
+  font-weight: 700; font-size: .88rem;
+  z-index: 99998; display: none;
+  animation: slideUp .3s ease;
+  max-width: 320px; border-left: 4px solid rgba(255,255,255,.3);
+}
+@keyframes slideUp { from { transform: translateY(16px); opacity:0; } to { transform: translateY(0); opacity:1; } }
+
+/* ═══════════════════════════════════════════
+   EMPTY STATE
+═══════════════════════════════════════════ */
+.empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+.empty .icon { font-size: 3rem; margin-bottom: 12px; display: block; }
+.empty p { font-size: .88rem; letter-spacing: 1px; }
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════ */
+@media(max-width:768px){
+  .layout { grid-template-columns: 1fr; }
+  nav { display: none; }
+  main { padding: 20px; }
+  .form-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+     LOGIN GATE — blocks access until verified
+═══════════════════════════════════════════ -->
+<div id="loginGate">
+  <div class="gate-box" id="gateBox">
+
+    <!-- Normal login view -->
+    <div id="gateLoginView">
+      <span class="gate-icon">🛡</span>
+      <h2 class="gate-title">ADMIN ACCESS</h2>
+      <p class="gate-sub">Restricted — Authorized Personnel Only</p>
+
+      <div class="gate-field">
+        <label>Admin Username</label>
+        <input type="text" id="gateUser" placeholder="Enter username" autocomplete="off">
+      </div>
+      <div class="gate-error" id="gateUserErr"></div>
+
+      <div class="gate-field">
+        <label>Admin Password</label>
+        <div class="gate-pass-wrap">
+          <input type="password" id="gatePass" placeholder="Enter password"
+                 onkeydown="if(event.key==='Enter') attemptLogin()">
+          <button class="gate-eye" onclick="toggleGatePass()" id="gateEyeBtn">👁</button>
+        </div>
+      </div>
+      <div class="gate-error" id="gatePassErr"></div>
+
+      <div class="gate-attempts" id="gateAttempts"></div>
+
+      <button class="gate-btn" id="gateLoginBtn" onclick="attemptLogin()">
+        ⚔ ENTER THE PANEL
+      </button>
+
+      <p class="gate-hint">Default credentials: <span>admin</span> / <span>gow@admin123</span></p>
+    </div>
+
+    <!-- Lockout view -->
+    <div id="gateLockoutView" style="display:none">
+      <div class="gate-lockout">
+        <span class="lock-icon">🔒</span>
+        <h3>ACCESS LOCKED</h3>
+        <p>Too many failed attempts. Try again in:</p>
+        <div id="lockTimer">30</div>
+        <p style="margin-top:10px;font-size:.8rem">seconds</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     ADMIN PANEL — hidden until authenticated
+═══════════════════════════════════════════ -->
+<div id="adminPanel" style="display:none">
+
+  <!-- HEADER -->
+  <header>
+    <h1>⚔ GoW ADMIN PANEL</h1>
+    <div class="header-right">
+      <a href="index.html" class="back-link">← Back to Site</a>
+      <div class="admin-badge">
+        <div class="admin-dot"></div>
+        <span id="adminNameDisplay">Admin</span>
+      </div>
+      <button class="header-logout" onclick="logoutAdmin()">Sign Out</button>
+    </div>
+  </header>
+
+  <!-- LAYOUT -->
+  <div class="layout">
+
+    <!-- SIDEBAR -->
+    <nav>
+      <div class="nav-label">Dashboard</div>
+      <a href="#" class="active" onclick="showSection('dashboard', this)">📊 Overview</a>
+
+      <div class="nav-label">Manage</div>
+      <a href="#" onclick="showSection('registrations', this)">⚔ Registrations</a>
+      <a href="#" onclick="showSection('players', this)">🧙 Players</a>
+      <a href="#" onclick="showSection('tournaments', this)">🏆 Tournaments</a>
+      <a href="#" onclick="showSection('teams', this)">🛡 Teams</a>
+
+      <div class="nav-label">Finance</div>
+      <a href="#" onclick="showSection('payments', this)">💳 Payments</a>
+
+      <div class="nav-divider"></div>
+      <div class="nav-label">Account</div>
+      <a href="#" onclick="showSection('settings', this)">⚙ Settings</a>
+    </nav>
+
+    <!-- MAIN -->
+    <main>
+
+      <!-- ── DASHBOARD ── -->
+      <div id="dashboard" class="section active">
+        <h2 class="section-title">Dashboard Overview</h2>
+        <p class="section-sub">Admin Authorities: View · Create · Edit · Delete · Update Payments</p>
+
+        <div class="stats-row">
+          <div class="stat-card"><div class="val" id="stat-total">—</div><div class="lbl">Total Registrations</div></div>
+          <div class="stat-card"><div class="val" id="stat-paid">—</div><div class="lbl">Paid</div></div>
+          <div class="stat-card"><div class="val" id="stat-pending">—</div><div class="lbl">Pending</div></div>
+          <div class="stat-card"><div class="val" id="stat-revenue">—</div><div class="lbl">Revenue ($)</div></div>
+        </div>
+
+        <div class="table-wrap">
+          <div class="table-head"><h3>Recent Registrations</h3><button class="btn btn-ghost btn-sm" onclick="loadDashboard()">↺ Refresh</button></div>
+          <table>
+            <thead><tr><th>Warrior</th><th>Tournament</th><th>Game</th><th>Payment</th><th>Date</th></tr></thead>
+            <tbody id="dash-table"><tr><td colspan="5" style="text-align:center;color:var(--muted);padding:30px;">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── REGISTRATIONS (Full CRUD) ── -->
+      <div id="registrations" class="section">
+        <h2 class="section-title">Tournament Registrations</h2>
+        <p class="section-sub">Create · Read · Update · Delete</p>
+        <div class="search-bar">
+          <input type="text" id="reg-search" placeholder="🔍  Search by warrior name or email..." oninput="filterTable()">
+          <select class="filter-select" id="reg-filter-status" onchange="filterTable()">
+            <option value="">All Payments</option>
+            <option value="Paid">Paid</option>
+            <option value="Pending">Pending</option>
+            <option value="Failed">Failed</option>
+          </select>
+          <button class="btn btn-red" onclick="openAddModal()">+ New Registration</button>
+        </div>
+        <div class="table-wrap">
+          <div class="table-head">
+            <h3>All Registrations <span id="regCount" style="color:var(--muted);font-size:.8rem;margin-left:8px;"></span></h3>
+            <button class="btn btn-ghost btn-sm" onclick="loadRegistrations()">↺ Refresh</button>
+          </div>
+          <table>
+            <thead><tr><th>Warrior</th><th>Email</th><th>Tournament</th><th>Game</th><th>Rank</th><th>Method</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+            <tbody id="reg-table"><tr><td colspan="9" style="text-align:center;color:var(--muted);padding:30px;">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── PLAYERS ── -->
+      <div id="players" class="section">
+        <h2 class="section-title">Warriors Registry</h2>
+        <p class="section-sub">All registered players across all games</p>
+        <div class="search-bar">
+          <input type="text" id="player-search" placeholder="🔍  Search player..." oninput="filterPlayers()">
+          <select class="filter-select" id="player-filter-game" onchange="filterPlayers()">
+            <option value="">All Games</option>
+            <option value="GoW">God of War</option>
+            <option value="Ragnarok">Ragnarök</option>
+            <option value="Ascension">Ascension</option>
+          </select>
+          <select class="filter-select" id="player-filter-rank" onchange="filterPlayers()">
+            <option value="">All Ranks</option>
+            <option value="Top">👑 Top</option>
+            <option value="Mid">⚡ Mid</option>
+            <option value="Low">🛡 Low</option>
+          </select>
+        </div>
+        <div class="table-wrap">
+          <div class="table-head"><h3>All Players</h3><button class="btn btn-ghost btn-sm" onclick="loadPlayers()">↺ Refresh</button></div>
+          <table>
+            <thead><tr><th>#</th><th>Name</th><th>Game</th><th>Rank</th><th>Wins</th><th>K/D</th><th>Hours</th><th>Achievements</th></tr></thead>
+            <tbody id="players-table"><tr><td colspan="8" style="text-align:center;color:var(--muted);padding:30px;">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── TOURNAMENTS ── -->
+      <div id="tournaments" class="section">
+        <h2 class="section-title">Tournaments</h2>
+        <p class="section-sub">All tournaments and their details</p>
+        <div class="table-wrap">
+          <div class="table-head"><h3>All Tournaments</h3><button class="btn btn-ghost btn-sm" onclick="loadTournaments()">↺ Refresh</button></div>
+          <table>
+            <thead><tr><th>Name</th><th>Game</th><th>Date</th><th>Prize</th><th>Fee ($)</th><th>Status</th><th>Participants</th></tr></thead>
+            <tbody id="tournaments-table"><tr><td colspan="7" style="text-align:center;color:var(--muted);padding:30px;">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── TEAMS ── -->
+      <div id="teams" class="section">
+        <h2 class="section-title">Teams</h2>
+        <p class="section-sub">Registered teams and their records</p>
+        <div class="table-wrap">
+          <div class="table-head"><h3>All Teams</h3><button class="btn btn-ghost btn-sm" onclick="loadTeams()">↺ Refresh</button></div>
+          <table>
+            <thead><tr><th>Team Name</th><th>Game</th><th>Members</th><th>Wins</th><th>Losses</th><th>Win Rate</th></tr></thead>
+            <tbody id="teams-table"><tr><td colspan="6" style="text-align:center;color:var(--muted);padding:30px;">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── PAYMENTS ── -->
+      <div id="payments" class="section">
+        <h2 class="section-title">Payment Management</h2>
+        <p class="section-sub">Review and update payment statuses</p>
+        <div class="stats-row" style="grid-template-columns:repeat(3,1fr)">
+          <div class="stat-card"><div class="val" id="pay-total-rev">—</div><div class="lbl">Total Revenue ($)</div></div>
+          <div class="stat-card"><div class="val" id="pay-count-paid">—</div><div class="lbl">Paid Transactions</div></div>
+          <div class="stat-card"><div class="val" id="pay-count-pending">—</div><div class="lbl">Pending Payments</div></div>
+        </div>
+        <div class="table-wrap">
+          <div class="table-head"><h3>All Payments</h3><button class="btn btn-ghost btn-sm" onclick="loadPayments()">↺ Refresh</button></div>
+          <table>
+            <thead><tr><th>Warrior</th><th>Tournament</th><th>Method</th><th>Amount</th><th>Status</th><th>Date</th><th>Action</th></tr></thead>
+            <tbody id="pay-table"><tr><td colspan="7" style="text-align:center;color:var(--muted);padding:30px;">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── SETTINGS ── -->
+      <div id="settings" class="section">
+        <h2 class="section-title">Admin Settings</h2>
+        <p class="section-sub">Manage admin credentials</p>
+        <div style="max-width:500px">
+          <div class="table-wrap" style="padding:28px">
+            <h3 style="font-family:'Cinzel';color:var(--red);letter-spacing:2px;margin-bottom:20px;">Change Password</h3>
+            <div class="form-group" style="margin-bottom:14px">
+              <label>Current Password</label>
+              <input type="password" id="set-cur-pass" placeholder="Enter current password">
+            </div>
+            <div class="form-group" style="margin-bottom:14px">
+              <label>New Password</label>
+              <input type="password" id="set-new-pass" placeholder="Min 6 characters">
+            </div>
+            <div class="form-group" style="margin-bottom:20px">
+              <label>Confirm New Password</label>
+              <input type="password" id="set-conf-pass" placeholder="Repeat new password">
+            </div>
+            <div class="form-error" id="set-err" style="margin-bottom:10px"></div>
+            <button class="btn btn-red" onclick="changeAdminPassword()">Update Password</button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- ── ADD / EDIT REGISTRATION MODAL ── -->
+<div class="modal-overlay" id="regModal">
+  <div class="modal-box">
+    <h3 id="modal-title">New Registration</h3>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Warrior Name *</label>
+        <input type="text" id="f-warriorName" placeholder="e.g. KRATOSXV">
+        <div class="form-error" id="f-err-warrior"></div>
+      </div>
+      <div class="form-group">
+        <label>Real Name</label>
+        <input type="text" id="f-realName" placeholder="Optional">
+      </div>
+      <div class="form-group">
+        <label>Email *</label>
+        <input type="email" id="f-email" placeholder="warrior@midgard.com">
+        <div class="form-error" id="f-err-email"></div>
+      </div>
+      <div class="form-group">
+        <label>Game *</label>
+        <select id="f-game">
+          <option value="GoW">God of War</option>
+          <option value="Ragnarok">Ragnarök</option>
+          <option value="Ascension">Ascension</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Tournament *</label>
+        <select id="f-tournament">
+          <option>Midgard Championship</option>
+          <option>Ragnarök Open</option>
+          <option>Ascension Cup</option>
+          <option>Nine Realms Grand Prix</option>
+          <option>Asgard Invitational</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Self-Rank</label>
+        <select id="f-rank">
+          <option value="Top">👑 Top</option>
+          <option value="Mid" selected>⚡ Mid</option>
+          <option value="Low">🛡 Low</option>
+        </select>
+      </div>
+      <div class="form-group form-full">
+        <label>Payment Method</label>
+        <div class="payment-methods">
+          <div class="pay-opt selected" onclick="selectPayment(this,'JazzCash')">📱 JazzCash</div>
+          <div class="pay-opt" onclick="selectPayment(this,'EasyPaisa')">💚 EasyPaisa</div>
+          <div class="pay-opt" onclick="selectPayment(this,'Stripe')">💳 Stripe</div>
+          <div class="pay-opt" onclick="selectPayment(this,'PayPal')">🅿 PayPal</div>
+          <div class="pay-opt" onclick="selectPayment(this,'USDT')">🪙 USDT</div>
+          <div class="pay-opt" onclick="selectPayment(this,'Bitcoin')">₿ Bitcoin</div>
+          <div class="pay-opt" onclick="selectPayment(this,'Ethereum')">⟠ Ethereum</div>
+        </div>
+        <input type="hidden" id="f-paymentMethod" value="JazzCash">
+      </div>
+      <div class="form-group">
+        <label>Registration Fee ($)</label>
+        <input type="number" id="f-paymentAmount" value="10" min="0">
+      </div>
+      <div class="form-group">
+        <label>Payment Status</label>
+        <select id="f-paymentStatus">
+          <option value="Pending">Pending</option>
+          <option value="Paid">Paid</option>
+          <option value="Failed">Failed</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeRegModal()">Cancel</button>
+      <button class="btn btn-red"   onclick="submitForm()">Save Registration</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── CONFIRM DELETE MODAL ── -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal-box">
+    <span class="confirm-icon">⚠️</span>
+    <h3>Confirm Delete</h3>
+    <p id="confirmMsg">Are you sure? This cannot be undone.</p>
+    <div class="modal-footer" style="justify-content:center">
+      <button class="btn btn-ghost" onclick="closeConfirm()">Cancel</button>
+      <button class="btn btn-red"   id="confirmOkBtn">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast">✅ Done!</div>
+
+<script>
+/* ═══════════════════════════════════════════
+   AUTH GATE
+═══════════════════════════════════════════ */
+const ADMIN_CREDS = {
+    users: {
+        admin:   "gow@admin123",
+        godofwar: "sparta2026"
+    }
+};
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_SECS = 30;
+
+let failedAttempts = parseInt(sessionStorage.getItem("admin_fails") || "0");
+let lockedUntil   = parseInt(sessionStorage.getItem("admin_lock")  || "0");
+
+/* Check if already authenticated this session */
+window.addEventListener("DOMContentLoaded", () => {
+    if (sessionStorage.getItem("admin_auth") === "true") {
+        unlockPanel(sessionStorage.getItem("admin_user") || "Admin");
+    } else {
+        checkLockout();
+        document.getElementById("gateUser").focus();
+    }
+});
+
+function checkLockout() {
+    const now = Date.now();
+    if (lockedUntil > now) {
+        showLockout(Math.ceil((lockedUntil - now) / 1000));
+    } else if (lockedUntil && lockedUntil <= now) {
+        /* Lockout expired — reset */
+        failedAttempts = 0;
+        sessionStorage.removeItem("admin_fails");
+        sessionStorage.removeItem("admin_lock");
+    }
+}
+
+function showLockout(seconds) {
+    document.getElementById("gateLoginView").style.display  = "none";
+    document.getElementById("gateLockoutView").style.display = "block";
+    let remaining = seconds;
+    document.getElementById("lockTimer").textContent = remaining;
+    const interval = setInterval(() => {
+        remaining--;
+        document.getElementById("lockTimer").textContent = remaining;
+        if (remaining <= 0) {
+            clearInterval(interval);
+            failedAttempts = 0;
+            sessionStorage.removeItem("admin_fails");
+            sessionStorage.removeItem("admin_lock");
+            document.getElementById("gateLoginView").style.display  = "block";
+            document.getElementById("gateLockoutView").style.display = "none";
+            document.getElementById("gateUser").focus();
+        }
+    }, 1000);
+}
+
+function toggleGatePass() {
+    const inp = document.getElementById("gatePass");
+    const btn = document.getElementById("gateEyeBtn");
+    if (inp.type === "password") { inp.type = "text"; btn.textContent = "🙈"; }
+    else                         { inp.type = "password"; btn.textContent = "👁"; }
+}
+
+function attemptLogin() {
+    const user = document.getElementById("gateUser").value.trim();
+    const pass = document.getElementById("gatePass").value;
+    const btn  = document.getElementById("gateLoginBtn");
+
+    /* Clear previous errors */
+    document.getElementById("gateUserErr").textContent = "";
+    document.getElementById("gatePassErr").textContent = "";
+    document.getElementById("gateAttempts").textContent = "";
+
+    /* Validate not empty */
+    let valid = true;
+    if (!user) { document.getElementById("gateUserErr").textContent = "Username is required."; valid = false; }
+    if (!pass) { document.getElementById("gatePassErr").textContent = "Password is required."; valid = false; }
+    if (!valid) return;
+
+    /* Check credentials */
+    if (ADMIN_CREDS.users[user] && ADMIN_CREDS.users[user] === pass) {
+        /* SUCCESS */
+        failedAttempts = 0;
+        sessionStorage.removeItem("admin_fails");
+        sessionStorage.removeItem("admin_lock");
+        sessionStorage.setItem("admin_auth", "true");
+        sessionStorage.setItem("admin_user", user);
+
+        btn.textContent = "✅ Access Granted...";
+        btn.disabled = true;
+        setTimeout(() => unlockPanel(user), 700);
+
+    } else {
+        /* FAILURE */
+        failedAttempts++;
+        sessionStorage.setItem("admin_fails", failedAttempts);
+
+        /* Shake the box */
+        const box = document.getElementById("gateBox");
+        box.classList.remove("shake");
+        void box.offsetWidth; // force reflow
+        box.classList.add("shake");
+
+        const remaining = MAX_ATTEMPTS - failedAttempts;
+        if (remaining <= 0) {
+            /* Lockout */
+            const until = Date.now() + LOCKOUT_SECS * 1000;
+            sessionStorage.setItem("admin_lock", until);
+            lockedUntil = until;
+            showLockout(LOCKOUT_SECS);
+        } else {
+            if (!ADMIN_CREDS.users[user]) {
+                document.getElementById("gateUserErr").textContent = "Unknown username.";
+            } else {
+                document.getElementById("gatePassErr").textContent = "Incorrect password.";
+            }
+            document.getElementById("gateAttempts").textContent =
+                `⚠ ${remaining} attempt${remaining !== 1 ? "s" : ""} remaining before lockout.`;
+        }
+    }
+}
+
+function unlockPanel(user) {
+    document.getElementById("loginGate").style.display  = "none";
+    document.getElementById("adminPanel").style.display = "block";
+    document.getElementById("adminNameDisplay").textContent = user.charAt(0).toUpperCase() + user.slice(1);
+    loadDashboard();
+}
+
+function logoutAdmin() {
+    sessionStorage.removeItem("admin_auth");
+    sessionStorage.removeItem("admin_user");
+    location.reload();
+}
+
+/* ═══════════════════════════════════════════
+   CHANGE PASSWORD (Settings)
+═══════════════════════════════════════════ */
+function changeAdminPassword() {
+    const cur  = document.getElementById("set-cur-pass").value;
+    const nw   = document.getElementById("set-new-pass").value;
+    const conf = document.getElementById("set-conf-pass").value;
+    const err  = document.getElementById("set-err");
+    err.textContent = "";
+
+    const adminUser = sessionStorage.getItem("admin_user");
+    if (!adminUser || ADMIN_CREDS.users[adminUser] !== cur) {
+        err.textContent = "Current password is incorrect."; return;
+    }
+    if (nw.length < 6) {
+        err.textContent = "New password must be at least 6 characters."; return;
+    }
+    if (nw !== conf) {
+        err.textContent = "Passwords do not match."; return;
+    }
+    ADMIN_CREDS.users[adminUser] = nw;
+    toast("✅ Password updated! (Note: refreshing the page resets it — implement server-side storage for persistence.)");
+    document.getElementById("set-cur-pass").value = "";
+    document.getElementById("set-new-pass").value = "";
+    document.getElementById("set-conf-pass").value = "";
+}
+
+/* ═══════════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════════ */
+const API = "http://localhost:3000/api";
+let editingId = null;
+let allRegs   = [];
+let allPlayersData = [];
+
+function showSection(id, el) {
+    document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+    document.querySelectorAll("nav a").forEach(a => a.classList.remove("active"));
+    document.getElementById(id).classList.add("active");
+    el.classList.add("active");
+
+    const loaders = {
+        dashboard: loadDashboard,
+        registrations: loadRegistrations,
+        players:   loadPlayers,
+        tournaments: loadTournaments,
+        teams:     loadTeams,
+        payments:  loadPayments
+    };
+    if (loaders[id]) loaders[id]();
+}
+
+/* ═══════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════ */
+function toast(msg, color = "#28a745") {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.style.background = color;
+    t.style.display = "block";
+    setTimeout(() => { t.style.display = "none"; }, 3500);
+}
+
+/* ═══════════════════════════════════════════
+   BADGE HELPERS
+═══════════════════════════════════════════ */
+function payBadge(s) {
+    const m = { Paid:"badge-paid", Pending:"badge-pending", Failed:"badge-failed" };
+    return `<span class="badge ${m[s]||''}">${s}</span>`;
+}
+function rankBadge(r) {
+    const m = { Top:"badge-top", Mid:"badge-mid", Low:"badge-low" };
+    const i = { Top:"👑", Mid:"⚡", Low:"🛡" };
+    return `<span class="badge ${m[r]||''}">${i[r]||''} ${r}</span>`;
+}
+
+/* ═══════════════════════════════════════════
+   DASHBOARD
+═══════════════════════════════════════════ */
+async function loadDashboard() {
+    try {
+        const res  = await fetch(`${API}/registrations`);
+        const data = await res.json();
+        const regs = data.data || [];
+        const paid    = regs.filter(r => r.paymentStatus === "Paid");
+        const pending = regs.filter(r => r.paymentStatus === "Pending");
+        const revenue = paid.reduce((s, r) => s + (r.paymentAmount || 0), 0);
+
+        document.getElementById("stat-total").textContent   = regs.length;
+        document.getElementById("stat-paid").textContent    = paid.length;
+        document.getElementById("stat-pending").textContent = pending.length;
+        document.getElementById("stat-revenue").textContent = "$" + revenue;
+
+        const tbody = document.getElementById("dash-table");
+        if (!regs.length) {
+            tbody.innerHTML = `<tr><td colspan="5"><div class="empty"><span class="icon">⚔️</span><p>No registrations yet</p></div></td></tr>`;
+            return;
+        }
+        tbody.innerHTML = regs.slice(0, 8).map(r => `
+            <tr>
+                <td><strong>${r.warriorName}</strong></td>
+                <td style="font-size:.85rem">${r.tournament}</td>
+                <td>${r.game}</td>
+                <td>${payBadge(r.paymentStatus)}</td>
+                <td style="color:var(--muted);font-size:.82rem">${new Date(r.registeredAt).toLocaleDateString()}</td>
+            </tr>
+        `).join("");
+    } catch {
+        toast("❌ Cannot connect to server! Is it running on port 3000?", "#dc143c");
+    }
+}
+
+/* ═══════════════════════════════════════════
+   REGISTRATIONS — CRUD
+═══════════════════════════════════════════ */
+async function loadRegistrations() {
+    try {
+        const res  = await fetch(`${API}/registrations`);
+        const data = await res.json();
+        allRegs = data.data || [];
+        renderRegTable(allRegs);
+    } catch { toast("❌ Cannot connect to server!", "#dc143c"); }
+}
+
+function renderRegTable(regs) {
+    document.getElementById("regCount").textContent = `(${regs.length})`;
+    const tbody = document.getElementById("reg-table");
+    if (!regs.length) {
+        tbody.innerHTML = `<tr><td colspan="9"><div class="empty"><span class="icon">⚔️</span><p>No registrations found.</p></div></td></tr>`;
+        return;
+    }
+    tbody.innerHTML = regs.map(r => `
+        <tr>
+            <td><strong>${r.warriorName}</strong><br><span style="color:var(--muted);font-size:.78rem">${r.realName || ""}</span></td>
+            <td style="font-size:.82rem">${r.email}</td>
+            <td style="font-size:.82rem">${r.tournament}</td>
+            <td>${r.game}</td>
+            <td>${rankBadge(r.rank)}</td>
+            <td style="font-size:.82rem">${r.paymentMethod}</td>
+            <td>${payBadge(r.paymentStatus)}</td>
+            <td style="color:var(--muted);font-size:.78rem">${new Date(r.registeredAt).toLocaleDateString()}</td>
+            <td style="white-space:nowrap">
+                <button class="btn btn-yellow btn-sm" onclick="openEditModal('${r._id}')">Edit</button>
+                <button class="btn btn-red    btn-sm" onclick="confirmDelete('${r._id}', '${r.warriorName}')">Delete</button>
+            </td>
+        </tr>
+    `).join("");
+}
+
+function filterTable() {
+    const q      = document.getElementById("reg-search").value.toLowerCase();
+    const status = document.getElementById("reg-filter-status").value;
+    renderRegTable(allRegs.filter(r => {
+        const matchQ = r.warriorName.toLowerCase().includes(q) || r.email.toLowerCase().includes(q);
+        const matchS = !status || r.paymentStatus === status;
+        return matchQ && matchS;
+    }));
+}
+
+/* ── ADD MODAL ── */
+function openAddModal() {
+    editingId = null;
+    document.getElementById("modal-title").textContent = "New Registration";
+    clearForm();
+    document.getElementById("regModal").classList.add("open");
+}
+
+/* ── EDIT MODAL ── */
+async function openEditModal(id) {
+    editingId = id;
+    document.getElementById("modal-title").textContent = "Edit Registration";
+    try {
+        const res  = await fetch(`${API}/registrations/${id}`);
+        const data = await res.json();
+        const r    = data.data;
+        document.getElementById("f-warriorName").value   = r.warriorName;
+        document.getElementById("f-realName").value      = r.realName || "";
+        document.getElementById("f-email").value         = r.email;
+        document.getElementById("f-game").value          = r.game;
+        document.getElementById("f-tournament").value    = r.tournament;
+        document.getElementById("f-rank").value          = r.rank;
+        document.getElementById("f-paymentMethod").value = r.paymentMethod;
+        document.getElementById("f-paymentStatus").value = r.paymentStatus;
+        document.getElementById("f-paymentAmount").value = r.paymentAmount;
+        document.querySelectorAll(".pay-opt").forEach(b => {
+            b.classList.toggle("selected", b.textContent.trim().includes(r.paymentMethod));
+        });
+        document.getElementById("regModal").classList.add("open");
+    } catch { toast("❌ Failed to load registration", "#dc143c"); }
+}
+
+function closeRegModal() {
+    document.getElementById("regModal").classList.remove("open");
+    clearFormErrors();
+}
+
+function clearForm() {
+    ["f-warriorName","f-realName","f-email"].forEach(id => document.getElementById(id).value = "");
+    document.getElementById("f-game").value          = "GoW";
+    document.getElementById("f-tournament").value    = "Midgard Championship";
+    document.getElementById("f-rank").value          = "Mid";
+    document.getElementById("f-paymentMethod").value = "JazzCash";
+    document.getElementById("f-paymentStatus").value = "Pending";
+    document.getElementById("f-paymentAmount").value = "10";
+    document.querySelectorAll(".pay-opt").forEach((b,i) => b.classList.toggle("selected", i === 0));
+    clearFormErrors();
+}
+
+function clearFormErrors() {
+    ["f-err-warrior","f-err-email"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = "";
+    });
+}
+
+function selectPayment(el, method) {
+    document.querySelectorAll(".pay-opt").forEach(b => b.classList.remove("selected"));
+    el.classList.add("selected");
+    document.getElementById("f-paymentMethod").value = method;
+}
+
+/* ── VALIDATE FORM ── */
+function validateRegForm(body) {
+    let valid = true;
+    document.getElementById("f-err-warrior").textContent = "";
+    document.getElementById("f-err-email").textContent   = "";
+    if (!body.warriorName) {
+        document.getElementById("f-err-warrior").textContent = "Warrior name is required.";
+        valid = false;
+    }
+    if (!body.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email)) {
+        document.getElementById("f-err-email").textContent = "Valid email is required.";
+        valid = false;
+    }
+    return valid;
+}
+
+/* ── CREATE / UPDATE ── */
+async function submitForm() {
+    const body = {
+        warriorName:   document.getElementById("f-warriorName").value.trim(),
+        realName:      document.getElementById("f-realName").value.trim(),
+        email:         document.getElementById("f-email").value.trim(),
+        game:          document.getElementById("f-game").value,
+        tournament:    document.getElementById("f-tournament").value,
+        rank:          document.getElementById("f-rank").value,
+        paymentMethod: document.getElementById("f-paymentMethod").value,
+        paymentStatus: document.getElementById("f-paymentStatus").value,
+        paymentAmount: parseFloat(document.getElementById("f-paymentAmount").value) || 10
+    };
+    if (!validateRegForm(body)) return;
+
+    try {
+        const url    = editingId ? `${API}/registrations/${editingId}` : `${API}/registrations`;
+        const method = editingId ? "PUT" : "POST";
+        const res    = await fetch(url, { method, headers: {"Content-Type":"application/json"}, body: JSON.stringify(body) });
+        const data   = await res.json();
+        if (data.success) {
+            toast(editingId ? "✅ Registration updated!" : "✅ Warrior registered!");
+            closeRegModal();
+            loadRegistrations();
+            if (document.getElementById("dashboard").classList.contains("active")) loadDashboard();
+        } else { toast("❌ " + data.message, "#dc143c"); }
+    } catch { toast("❌ Server error!", "#dc143c"); }
+}
+
+/* ── DELETE with confirmation modal ── */
+let pendingDeleteId = null;
+
+function confirmDelete(id, name) {
+    pendingDeleteId = id;
+    document.getElementById("confirmMsg").textContent =
+        `Delete registration for "${name}"? This cannot be undone.`;
+    document.getElementById("confirmOkBtn").onclick = () => executeDelete(id);
+    document.getElementById("confirmModal").classList.add("open");
+}
+
+function closeConfirm() {
+    pendingDeleteId = null;
+    document.getElementById("confirmModal").classList.remove("open");
+}
+
+async function executeDelete(id) {
+    closeConfirm();
+    try {
+        const res  = await fetch(`${API}/registrations/${id}`, { method: "DELETE" });
+        const data = await res.json();
+        if (data.success) { toast("🗑 Registration deleted!"); loadRegistrations(); }
+        else { toast("❌ " + data.message, "#dc143c"); }
+    } catch { toast("❌ Server error!", "#dc143c"); }
+}
+
+/* ═══════════════════════════════════════════
+   PLAYERS
+═══════════════════════════════════════════ */
+async function loadPlayers() {
+    try {
+        const res  = await fetch(`${API}/players`);
+        const data = await res.json();
+        allPlayersData = data.players || [];
+        renderPlayersTable(allPlayersData);
+    } catch { toast("❌ Cannot connect to server!", "#dc143c"); }
+}
+
+function renderPlayersTable(players) {
+    const tbody = document.getElementById("players-table");
+    tbody.innerHTML = players.map((p, i) => `
+        <tr>
+            <td style="color:var(--muted);font-family:'Cinzel',serif">${i+1}</td>
+            <td><strong>${p.name}</strong></td>
+            <td>${p.game}</td>
+            <td>${rankBadge(p.rank)}</td>
+            <td style="color:#28c76f;font-weight:700">${p.wins}</td>
+            <td>${p.kd}</td>
+            <td>${p.hours}h</td>
+            <td style="font-size:.78rem;color:var(--muted)">${p.achievements.slice(0,2).join(", ")}${p.achievements.length>2?"…":""}</td>
+        </tr>
+    `).join("");
+}
+
+function filterPlayers() {
+    const q    = document.getElementById("player-search").value.toLowerCase();
+    const game = document.getElementById("player-filter-game").value;
+    const rank = document.getElementById("player-filter-rank").value;
+    renderPlayersTable(allPlayersData.filter(p => {
+        const mQ = p.name.toLowerCase().includes(q);
+        const mG = !game || p.game === game;
+        const mR = !rank || p.rank === rank;
+        return mQ && mG && mR;
+    }));
+}
+
+/* ═══════════════════════════════════════════
+   TOURNAMENTS
+═══════════════════════════════════════════ */
+async function loadTournaments() {
+    try {
+        const res  = await fetch(`${API}/tournaments`);
+        const data = await res.json();
+        const tbody = document.getElementById("tournaments-table");
+        tbody.innerHTML = (data.tournaments || []).map(t => `
+            <tr>
+                <td><strong>${t.name}</strong></td>
+                <td>${t.game}</td>
+                <td style="color:var(--muted)">${t.date}</td>
+                <td style="color:#ffd700">${t.prize}</td>
+                <td>$${t.fee}</td>
+                <td><span class="badge ${t.status==="Upcoming"?"badge-mid":"badge-paid"}">${t.status}</span></td>
+                <td>${t.participants}</td>
+            </tr>
+        `).join("");
+    } catch { toast("❌ Cannot connect to server!", "#dc143c"); }
+}
+
+/* ═══════════════════════════════════════════
+   TEAMS
+═══════════════════════════════════════════ */
+async function loadTeams() {
+    try {
+        const res  = await fetch(`${API}/teams`);
+        const data = await res.json();
+        const tbody = document.getElementById("teams-table");
+        tbody.innerHTML = (data.teams || []).map(t => {
+            const total   = t.wins + t.losses;
+            const winRate = total ? Math.round((t.wins / total) * 100) + "%" : "—";
+            return `
+            <tr>
+                <td><strong>${t.name}</strong></td>
+                <td>${t.game}</td>
+                <td style="font-size:.82rem;color:var(--muted)">${t.members.join(", ")}</td>
+                <td style="color:#28c76f;font-weight:700">${t.wins}</td>
+                <td style="color:var(--red)">${t.losses}</td>
+                <td>${winRate}</td>
+            </tr>`;
+        }).join("");
+    } catch { toast("❌ Cannot connect to server!", "#dc143c"); }
+}
+
+/* ═══════════════════════════════════════════
+   PAYMENTS
+═══════════════════════════════════════════ */
+async function loadPayments() {
+    try {
+        const res  = await fetch(`${API}/registrations`);
+        const data = await res.json();
+        const regs = data.data || [];
+
+        const paid    = regs.filter(r => r.paymentStatus === "Paid");
+        const pending = regs.filter(r => r.paymentStatus === "Pending");
+        const revenue = paid.reduce((s, r) => s + (r.paymentAmount || 0), 0);
+        document.getElementById("pay-total-rev").textContent    = "$" + revenue;
+        document.getElementById("pay-count-paid").textContent   = paid.length;
+        document.getElementById("pay-count-pending").textContent= pending.length;
+
+        const tbody = document.getElementById("pay-table");
+        if (!regs.length) {
+            tbody.innerHTML = `<tr><td colspan="7"><div class="empty"><span class="icon">💳</span><p>No payments yet</p></div></td></tr>`;
+            return;
+        }
+        tbody.innerHTML = regs.map(r => `
+            <tr>
+                <td><strong>${r.warriorName}</strong></td>
+                <td style="font-size:.82rem">${r.tournament}</td>
+                <td>${r.paymentMethod}</td>
+                <td style="color:#ffd700">$${r.paymentAmount}</td>
+                <td>${payBadge(r.paymentStatus)}</td>
+                <td style="color:var(--muted);font-size:.78rem">${new Date(r.registeredAt).toLocaleDateString()}</td>
+                <td>
+                    ${r.paymentStatus !== "Paid"
+                        ? `<button class="btn btn-green btn-sm" onclick="markPaid('${r._id}','${r.paymentMethod}')">Mark Paid</button>`
+                        : `<span style="color:#28c76f;font-size:.82rem">✅ Paid</span>`}
+                </td>
+            </tr>
+        `).join("");
+    } catch { toast("❌ Cannot connect to server!", "#dc143c"); }
+}
+
+async function markPaid(id, method) {
+    try {
+        const res  = await fetch(`${API}/registrations/${id}/pay`, {
+            method: "PATCH",
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify({ paymentMethod: method, paymentStatus: "Paid" })
+        });
+        const data = await res.json();
+        if (data.success) { toast("💳 Payment marked as Paid!"); loadPayments(); }
+    } catch { toast("❌ Server error!", "#dc143c"); }
+}
+
+/* ── INIT ── */
+// Panel is shown after auth — loadDashboard called in unlockPanel()
+</script>
+</body>
+</html>
